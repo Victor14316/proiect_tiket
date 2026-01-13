@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <title>Rezervare Client</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Rezervare Sală de Spectacole</h1>
+    <div id="cinema-client" class="cinema"></div>
+    <form id="reservationForm">
+        <input type="text" id="name" placeholder="Nume" required>
+        <input type="number" id="seat" placeholder="Număr loc" required readonly>
+        <button type="submit">Rezervă</button>
+    </form>
+    <h2>Locuri rezervate:</h2>
+    <ul id="reservationsList"></ul>
+    <script>
+    const TOTAL_SEATS = 30;
+    const SEATS_PER_ROW = 5;
+    let reservations = [];
+    function renderSeats() {
+        const container = document.getElementById('cinema-client');
+        container.innerHTML = '';
+        let table = document.createElement('table');
+        let seatNumber = 1;
+        for (let row = 0; row < 6; row++) {
+            let tr = document.createElement('tr');
+            for (let col = 0; col < SEATS_PER_ROW; col++) {
+                if (seatNumber > TOTAL_SEATS) break;
+                let td = document.createElement('td');
+                const reserved = reservations.some(r => Number(r.seat) === seatNumber);
+                let btn = document.createElement('button');
+                btn.textContent = seatNumber;
+                btn.style.width = '40px';
+                btn.style.height = '40px';
+                btn.style.margin = '4px';
+                btn.style.fontWeight = 'bold';
+                btn.style.background = reserved ? '#f44336' : '#4caf50';
+                btn.style.color = '#fff';
+                btn.disabled = reserved;
+                if (!reserved) {
+                    btn.onclick = () => {
+                        document.getElementById('seat').value = seatNumber;
+                    };
+                }
+                td.appendChild(btn);
+                tr.appendChild(td);
+                seatNumber++;
+            }
+            table.appendChild(tr);
+        }
+        container.appendChild(table);
+    }
+    function loadReservations() {
+        fetch('/api/reservations')
+            .then(res => res.json())
+            .then(data => {
+                reservations = data;
+                renderSeats();
+                const reservationsList = document.getElementById('reservationsList');
+                reservationsList.innerHTML = '';
+                data.forEach(r => {
+                    const li = document.createElement('li');
+                    li.textContent = `${r.name} - loc ${r.seat}`;
+                    reservationsList.appendChild(li);
+                });
+            });
+    }
+    document.getElementById('reservationForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const name = document.getElementById('name').value;
+        const seat = document.getElementById('seat').value;
+        if (!seat) return alert('Selectează un loc liber!');
+        fetch('/api/reserve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, seat })
+        })
+        .then(res => res.json())
+        .then(() => {
+            document.getElementById('reservationForm').reset();
+            loadReservations();
+        });
+    });
+    document.addEventListener('DOMContentLoaded', loadReservations);
+    </script>
+</body>
+</html>

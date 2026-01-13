@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <title>Administrare Sală Spectacole</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Pagina Administrativă</h1>
+    <p>Aici personalul poate vedea toate rezervările și poate gestiona locurile.</p>
+    <div id="cinema-admin" class="cinema"></div>
+    <script>
+    const TOTAL_SEATS = 30;
+    function renderSeats(reservations) {
+        const container = document.getElementById('cinema-admin');
+        container.innerHTML = '';
+        for (let i = 1; i <= TOTAL_SEATS; i++) {
+            const reserved = reservations.some(r => Number(r.seat) === i);
+            const seatDiv = document.createElement('div');
+            seatDiv.className = 'seat ' + (reserved ? 'reserved' : 'free');
+            // Scaun grafic
+            const backrest = document.createElement('div');
+            backrest.className = 'backrest';
+            backrest.textContent = i;
+            const base = document.createElement('div');
+            base.className = 'base';
+            seatDiv.appendChild(backrest);
+            seatDiv.appendChild(base);
+            container.appendChild(seatDiv);
+        }
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+        fetch('/api/reservations')
+            .then(res => res.json())
+            .then(data => {
+                renderSeats(data);
+            });
+    });
+    </script>
+</body>
+</html>
