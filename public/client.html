@@ -10,6 +10,22 @@
     <div id="cinema-client" class="cinema"></div>
     <form id="reservationForm">
         <input type="text" id="name" placeholder="Nume" required>
+        <select id="day" required>
+            <option value="">Alege ziua</option>
+            <option>Luni</option>
+            <option>Marti</option>
+            <option>Miercuri</option>
+            <option>Joi</option>
+            <option>Vineri</option>
+            <option>Sambata</option>
+            <option>Duminica</option>
+        </select>
+        <select id="hour" required>
+            <option value="">Alege ora</option>
+            <option>12:00</option>
+            <option>16:00</option>
+            <option>20:00</option>
+        </select>
         <input type="number" id="seat" placeholder="Număr loc" required readonly>
         <button type="submit">Rezervă</button>
     </form>
@@ -29,7 +45,10 @@
             for (let col = 0; col < SEATS_PER_ROW; col++) {
                 if (seatNumber > TOTAL_SEATS) break;
                 let td = document.createElement('td');
-                const reserved = reservations.some(r => Number(r.seat) === seatNumber);
+                // Filtrare rezervări pentru zi și oră selectate
+                const day = document.getElementById('day').value;
+                const hour = document.getElementById('hour').value;
+                const reserved = reservations.some(r => Number(r.seat) === seatNumber && r.day === day && r.hour === hour);
                 let btn = document.createElement('button');
                 btn.textContent = seatNumber;
                 btn.style.width = '40px';
@@ -38,8 +57,8 @@
                 btn.style.fontWeight = 'bold';
                 btn.style.background = reserved ? '#f44336' : '#4caf50';
                 btn.style.color = '#fff';
-                btn.disabled = reserved;
-                if (!reserved) {
+                btn.disabled = reserved || !day || !hour;
+                if (!reserved && day && hour) {
                     btn.onclick = () => {
                         document.getElementById('seat').value = seatNumber;
                     };
@@ -60,7 +79,10 @@
                 renderSeats();
                 const reservationsList = document.getElementById('reservationsList');
                 reservationsList.innerHTML = '';
-                data.forEach(r => {
+                // Filtrare pentru zi și oră selectate
+                const day = document.getElementById('day').value;
+                const hour = document.getElementById('hour').value;
+                data.filter(r => r.day === day && r.hour === hour).forEach(r => {
                     const li = document.createElement('li');
                     li.textContent = `${r.name} - loc ${r.seat}`;
                     reservationsList.appendChild(li);
@@ -71,17 +93,29 @@
         e.preventDefault();
         const name = document.getElementById('name').value;
         const seat = document.getElementById('seat').value;
-        if (!seat) return alert('Selectează un loc liber!');
+        const day = document.getElementById('day').value;
+        const hour = document.getElementById('hour').value;
+        if (!seat || !day || !hour) return alert('Selectează ziua, ora și un loc liber!');
         fetch('/api/reserve', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, seat })
+            body: JSON.stringify({ name, seat, day, hour })
         })
         .then(res => res.json())
         .then(() => {
             document.getElementById('reservationForm').reset();
             loadReservations();
         });
+    });
+    document.getElementById('day').addEventListener('change', () => {
+        document.getElementById('seat').value = '';
+        renderSeats();
+        loadReservations();
+    });
+    document.getElementById('hour').addEventListener('change', () => {
+        document.getElementById('seat').value = '';
+        renderSeats();
+        loadReservations();
     });
     document.addEventListener('DOMContentLoaded', loadReservations);
     </script>
